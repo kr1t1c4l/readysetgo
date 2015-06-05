@@ -58,7 +58,7 @@ app.get('/allstops', function (request, response) {
 // All stops geolocations for a given route (id)
 app.get('/stopgeo/:id', function (request, response) {
   console.log('Call on stoptimes, stops, trips, routes for route_id=id', request.params.id);
-  var sql = "SELECT DISTINCT stops.stop_lat, stops.stop_lon FROM stoptimes INNER JOIN stops ON stoptimes.stop_id = stops.stop_id INNER JOIN trips ON stoptimes.trip_id = trips.trip_id INNER JOIN routes ON trips.route_id = routes.route_id WHERE routes.route_short_name LIKE " +request.params.id.toString()+ ";"
+  var sql = "SELECT DISTINCT stops.stop_lat, stops.stop_lon FROM stoptimes INNER JOIN stops ON stoptimes.stop_id = stops.stop_id INNER JOIN trips ON stoptimes.trip_id = trips.trip_id INNER JOIN routes ON trips.route_id = routes.route_id WHERE routes.route_short_name LIKE '" + request.params.id.toString() +"';"
   pg.connect(process.env.DATABASE_URL, function(err, client, done) {
       client.query(sql,function(err, result) {
         done();
