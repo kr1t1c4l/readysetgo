@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var pg = require('pg');
 var cors = require('cors');
+var search = require('./search');
 
 app.set('port', (process.env.PORT || 5000));
 app.use(express.static(__dirname + '/public'));
@@ -86,6 +87,32 @@ app.get('/stopallinfo/:id', function (request, response) {
     });
   });
 });
+
+// Returns two stop ids, one closest to the users position, the other closest to their destination from the same route
+
+// Get all stops, find closest x to start location for each route?
+//      check for each of x best routes which stop is closest to the destination
+
+// OR
+// For each route check each stop compare to start and finish
+
+app.get('/search/:id', function (request, response) {
+  console.log('Call on stops for route_id=id', request.params.id);
+  console.log(search.getDistance(1, 1, 2, 2));
+  var sql = "SELECT stop_id, stop_lat, stop_lon FROM stops;"
+  pg.connect(process.env.DATABASE_URL, function(err, client, done) {
+      client.query(sql,function(err, result) {
+        done();
+        if (err)
+          { console.error(err); response.send("Error " + err); }
+        else
+          { response.send(result.rows); }
+    });
+  });
+});
+
+
+
 
 app.listen(app.get('port'), function() {
   console.log('Node app is running on port', app.get('port'));
