@@ -15,18 +15,27 @@ app.get('/', function(req, res) {
 
 // Output geolocation route path
 app.get('/path/:id', function (request, response) {
-  console.log('Call on shapes (route path) for id ', request.params.id);
-  var sql = "SELECT DISTINCT ON (shapes.shape_pt_sequence) routes.route_short_name, trips.trip_id, shapes.shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence FROM trips INNER JOIN shapes ON shapes.shape_id = trips.shape_id INNER JOIN routes ON trips.route_id = routes.route_id WHERE routes.route_short_name = '"+request.params.id+"';"
-  pg.connect(process.env.DATABASE_URL, function(err, client, done) {
-      client.query(sql,function(err, result) {
-        done();
-        if (err)
-          { console.error(err); response.send("Error " + err); }
-        else
-          { response.send(result.rows); }
+    console.log('Call on shapes (route path) for id ', request.params.id);
+    var sql = "SELECT trips.trip_id, routes.route_short_name FROM trips INNER JOIN routes ON trips.route_id = routes.route_id WHERE routes.route_short_name = '"+request.params.id+"' LIMIT 1;";
+    pg.connect(process.env.DATABASE_URL, function(err, client, done) {
+        client.query(sql,function(err, result) {
+            done();
+            if (err)
+            { console.error(err); response.send("Error " + err); }
+            else
+            { 
+                var tripID = result.rows[0].trip_id;
+
+                client.query("SELECT trips.trip_id, shapes.shape_id, shape_pt_lat, shape_pt_lon, shape_pt_sequence FROM trips INNER JOIN shapes ON shapes.shape_id = trips.shape_id WHERE trips.trip_id = "+tripID+";", function(err, finalresult) {
+                    console.log("executed second query");
+                    response.send(finalresult.rows);
+                });
+            }
+        });
     });
-  });
 });
+
+
 // Alternative method for geolocation route path
 // parameters routeNumber userStopID destStopID
 app.get('/pathto/:route/:user/:dest', function (request, response) {
@@ -215,6 +224,8 @@ app.get('/numberofstops/:id', function (request, response) {
                 if(minDiff > Math.abs(closestStops[1].stopSequence - destSequenceNum)){
                     minDiff = Math.abs(closestStops[1].stopSequence - destSequenceNum);
                 }
+                
+                minDiff = Math.floor(minDiff/1.5);
                 
                 // return # of stops left
                 var numberRemaining = {
