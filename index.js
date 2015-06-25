@@ -165,10 +165,8 @@ app.get('/search/:id', function (request, response) {
 
 app.get('/numberofstops/:id', function (request, response) {
     var input = JSON.parse(request.params.id);
-    console.log(input);
-    console.log('Search for: ', request.params.id);
-    console.log(request.params.id);
-    var sql = "SELECT DISTINCT ON (stops.stop_id) stoptimes.stop_sequence, stops.stop_lat, stops.stop_lon, routes.route_short_name, stops.stop_id FROM stoptimes INNER JOIN stops ON stoptimes.stop_id = stops.stop_id INNER JOIN trips ON stoptimes.trip_id = trips.trip_id INNER JOIN routes ON trips.route_id = routes.route_id where route_short_name LIKE '" + 54 + "';"
+    console.log('Call number of stops');
+    var sql = "SELECT DISTINCT ON (stops.stop_id) stoptimes.stop_sequence, stops.stop_lat, stops.stop_lon, routes.route_short_name, stops.stop_id FROM stoptimes INNER JOIN stops ON stoptimes.stop_id = stops.stop_id INNER JOIN trips ON stoptimes.trip_id = trips.trip_id INNER JOIN routes ON trips.route_id = routes.route_id where route_short_name LIKE '" + input.routeNumber + "';"
     pg.connect(process.env.DATABASE_URL, function(err, client, done) {
         client.query(sql,function(err, result) {
             done();
@@ -176,6 +174,7 @@ app.get('/numberofstops/:id', function (request, response) {
                 console.error(err); response.send("Error " + err); 
             } else { 
                 var closestStops = [];
+                var destSequenceNum;
                 
                 closestStops[0] = {
                     dist: Infinity,
@@ -186,8 +185,7 @@ app.get('/numberofstops/:id', function (request, response) {
                     dist: Infinity,
                     stopSequence: 0,                    
                 }
-
-                response.send(JSON.stringify(best)); 
+                
                 
                 _.each(result.rows, function(stop) {
                     var dist = search.getDistance(stop.stop_lat, stop.stop_lon, input.userLat, input.userLng);
@@ -206,14 +204,24 @@ app.get('/numberofstops/:id', function (request, response) {
                             closestStops[1].stopSequence = stop.stop_sequence;                            
                         }
                     }
+                    
+                    if(input.destStopID == stop.stop_id){
+                        destSequenceNum = stop.stop_sequence;                        
+                    }
                 });
                 
                 //count difference between stop_sequence numbers
-//                if(closestStops[0].stopSequence > input.){
-//                
-//                }
+                var minDiff = Math.abs(closestStops[0].stopSequence - destSequenceNum);
+                if(minDiff > Math.abs(closestStops[1].stopSequence - destSequenceNum)){
+                    minDiff = Math.abs(closestStops[1].stopSequence - destSequenceNum);
+                }
                 
                 // return # of stops left
+                var numberRemaining = {
+                    numberOfStopsRemaining: minDiff
+                };
+
+                response.send(JSON.stringify(numberRemaining)); 
             }
         });
     });
