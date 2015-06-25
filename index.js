@@ -28,10 +28,20 @@ app.get('/path/:id', function (request, response) {
   });
 });
 // Alternative method for geolocation route path
-// parameters routeNumber  userStop destStop
+// parameters routeNumber userStopID destStopID
 app.get('/pathto/:route/:user/:dest', function (request, response) {
-  console.log('Calling pathto',request.params.route, request.params.user, request.params.dest);
-  response.send(request.params.route +  request.params.user + request.params.dest);
+  console.log('Calling pathto ',request.params.route, request.params.user, request.params.dest);
+  //response.send(request.params.route +  request.params.user + request.params.dest);
+  // find the route ID from the route short name
+  pg.connect(process.env.DATABASE_URL, function(err, client, done) {
+    client.query("SELECT * FROM routes WHERE route_short_name = ($1)",[request.params.route],function(err, result) {
+      done();
+        if (err)
+        { console.error(err); response.send("Error " + err); }
+        else
+        {response.send(result.rows);}
+    });
+  });
 });
 
 // All information for a given stop
