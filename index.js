@@ -34,12 +34,17 @@ app.get('/pathto/:route/:user/:dest', function (request, response) {
   //response.send(request.params.route +  request.params.user + request.params.dest);
   // find the route ID from the route short name
   pg.connect(process.env.DATABASE_URL, function(err, client, done) {
-    client.query("SELECT * FROM routes WHERE route_short_name = ($1)",[request.params.route],function(err, result) {
+    client.query("SELECT route_id FROM routes WHERE route_short_name = ($1)",[request.params.route],function(err, result) {
       done();
         if (err)
-        { console.error(err); response.send("Error " + err); }
-        else
-        {response.send(result.rows);}
+        { console.error(err);
+          return response.send("Error " + err); }
+        var routeid = result.rows[0].route_id;
+        client.query("SELECT trips.trip_id, stoptimes.arrival_time FROM trips INNER JOIN stoptimes ON  (trips.trip_id = stoptimes.trip_id) WHERE trips.route_id = ($1) AND stoptimes.stop_id = ($2) AND stoptimes.arrival_time > '12:10:00'::time LIMIT 1",[routeid,request.params.user],function(err, result) {
+          console.log("executed second query");
+          response.send(result.rows);
+        });
+        
     });
   });
 });
