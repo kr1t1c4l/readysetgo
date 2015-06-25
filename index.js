@@ -158,6 +158,62 @@ app.get('/search/:id', function (request, response) {
 });
 
 
+app.get('/numberofstops/:id', function (request, response) {
+    var input = JSON.parse(request.params.id);
+    console.log(input);
+    console.log('Search for: ', request.params.id);
+    console.log(request.params.id);
+    var sql = "SELECT DISTINCT ON (stops.stop_id) stoptimes.stop_sequence, stops.stop_lat, stops.stop_lon, routes.route_short_name, stops.stop_id FROM stoptimes INNER JOIN stops ON stoptimes.stop_id = stops.stop_id INNER JOIN trips ON stoptimes.trip_id = trips.trip_id INNER JOIN routes ON trips.route_id = routes.route_id where route_short_name LIKE '" + 54 + "';"
+    pg.connect(process.env.DATABASE_URL, function(err, client, done) {
+        client.query(sql,function(err, result) {
+            done();
+            if (err) {
+                console.error(err); response.send("Error " + err); 
+            } else { 
+                var closestStops = [];
+                
+                closestStops[0] = {
+                    dist: Infinity,
+                    stopSequence: 0,                    
+                }
+                
+                closestStops[1] = {
+                    dist: Infinity,
+                    stopSequence: 0,                    
+                }
+
+                response.send(JSON.stringify(best)); 
+                
+                _.each(result.rows, function(stop) {
+                    var dist = search.getDistance(stop.stop_lat, stop.stop_lon, input.userLat, input.userLng);
+                    
+                    //if dist < current best dist save
+                    if (dist < closestStops[0].dist){
+                        var temp = closestStops[0];
+                        closestStops[1] = temp;
+                        
+                        closestStops[0].dist = dist;
+                        closestStops[0].stopSequence = stop.stop_sequence;
+                    } else {
+                        //else is dist < second best dist save
+                        if(dist < closestStops[1].dist){
+                            closestStops[1].dist = dist;
+                            closestStops[1].stopSequence = stop.stop_sequence;                            
+                        }
+                    }
+                });
+                
+                //count difference between stop_sequence numbers
+//                if(closestStops[0].stopSequence > input.){
+//                
+//                }
+                
+                // return # of stops left
+            }
+        });
+    });
+});
+
 
 
 app.listen(app.get('port'), function() {
