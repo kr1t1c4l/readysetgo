@@ -27,6 +27,12 @@ app.get('/path/:id', function (request, response) {
     });
   });
 });
+// Alternative method for geolocation route path
+// parameters routeNumber  userStop destStop
+app.get('/pathto/:route/:user/:dest', function (request, response) {
+  console.log('Calling pathto',request.params.route, request.params.user, request.params.dest);
+  response.send(request.params.route +  request.params.user + request.params.dest);
+});
 
 // All information for a given stop
 app.get('/stopallinfo/:id', function (request, response) {
